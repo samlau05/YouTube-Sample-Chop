@@ -1,0 +1,87 @@
+body {
+    width: 350px;
+    height: 400px;
+    padding: 10px; 
+    font-family: Noto Sans, sans-serif;
+    background-color: #1F1F1F;
+}
+
+/* Container for title and settings button */
+.title-container {
+    display: flex;
+    align-items: center; /* Align items vertically center */
+    justify-content: space-between; /* Space items evenly */
+}
+
+h1 {
+    font-size: 30px;
+    margin: 0; /* Remove margin to ensure elements are flush */
+    
+}
+
+/* Style for YouTube text */
+.youtube-text {
+    color: #ffffff; 
+}
+  
+/* Style for SampleChop text */
+.sample-text {
+    font-weight: bold;
+    color: #b774ee; 
+}
+
+.settings-button {
+    width: 50px;
+    height: 50px;
+    background-color: transparent;
+    border: none;
+    display: flex;
+    align-items: center; /* Align content vertically center */
+    justify-content: center; /* Align content horizontally center */
+}
+
+.fa-gear {
+    color: white;
+}
+
+.fa-gear:hover {
+    color: #603185;
+}
+
+/* Style for timestamps list */
+#timestamps {
+    list-style-type: none; /* Remove default list styles */
+    padding: 0; /* Remove default padding */
+}
+
+/* Style for each timestamp item */
+#timestamps li {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 8px; 
+    padding: 8px; 
+    background-color: #333; 
+    color: #fff; 
+    font-size: 14px;
+    border-radius: 4px; 
+}
+
+/* Hover effect for timestamp items */
+#timestamps li:hover {
+    background-color: #555;
+    cursor: pointer;
+}
+
+.delete-btn {
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    color: #603185;
+}
+
