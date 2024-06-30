@@ -85,3 +85,7 @@ h1 {
     color: #603185;
 }
 
+.hidden {
+    display: none;
+}
+
