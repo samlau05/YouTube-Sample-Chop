@@ -8,12 +8,32 @@ function getYouTubeVideoId() {
   return videoId;
 }
 
-// function getTimestamps(videoId) {
-//   chrome.storage.local.get({ [videoId]: [] }, function(result) {
-//     let timestamps = result[videoId];
-//     return timestamps;
-//   });
-// }
+function loadChopDots() {
+  let videoId = getYouTubeVideoId();
+  chrome.storage.local.get({ [videoId]: [] }, function(result) {
+    let timestamps = result[videoId];
+    let player = document.querySelector('video');
+    let progressBar = document.querySelector('.ytp-progress-bar-container');
+    if (!player || !progressBar) return;
+
+    let progressBarRect = progressBar.getBoundingClientRect();
+    let progressBarWidth = progressBarRect.width;
+
+    document.querySelectorAll('.chop-dot').forEach(dot => dot.remove());
+
+    timestamps.forEach(function(timestamp) {
+      let dotPosition = (timestamp / player.duration) * progressBarWidth;
+
+      let dot = document.createElement('div');
+      dot.classList.add('chop-dot'); // Add a class for styling
+      dot.style.left = dotPosition-6 + 'px';
+      dot.setAttribute('data-time', timestamp); // Set a data attribute to identify the dot
+
+      progressBar.appendChild(dot);
+    });
+  });
+}
+
 
 // Function to add a dot at a specific timestamp position above the YouTube progress bar
 function addChopDot(currentTime) {
@@ -41,17 +61,6 @@ function addChopDot(currentTime) {
   } else {
     console.error('Progress bar container not found.');
   }
-}
-
-function loadChopDots() {
-  let videoId = getYouTubeVideoId();
-  chrome.storage.local.get({ [videoId]: [] }, function(result) {
-    let timestamps = result[videoId];
-    timestamps.forEach(function(timestamp, index) {
-      console.log("Adding chop-dot @: " + timestamp);
-      addChopDot(timestamp);
-    });
-  });
 }
 
 document.addEventListener('keydown', function(event) {
@@ -102,4 +111,16 @@ document.addEventListener('keydown', function(event) {
 
 window.addEventListener('load', () => {
   loadChopDots();
+
+  window.addEventListener('resize', loadChopDots);
+
+  // Add mutation observer to detect changes in YouTube player size
+  const playerContainer = document.querySelector('.html5-video-player');
+  if (playerContainer) {
+    const observer = new MutationObserver(() => {
+      loadChopDots();
+    });
+    observer.observe(playerContainer, { attributes: true, childList: true, subtree: true });
+  }
+
 })
