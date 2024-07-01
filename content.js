@@ -30,7 +30,7 @@ function getChopDotContainer() {
 }
 
 // Function to add a dot at a specific timestamp position
-function addChopDot(currentTime) {
+function addChopDot(currentTime, index) {
   const player = document.querySelector('video');
   const container = getChopDotContainer();
   if (!player || !container) return;
@@ -40,15 +40,17 @@ function addChopDot(currentTime) {
 
   let dot = document.createElement('div');
   dot.classList.add('chop-dot'); // Add a class for styling
-  dot.style.left = dotPosition-6 + 'px';
-  dot.setAttribute('data-time', currentTime); // Set a data attribute to identify the dot
+  dot.style.left = dotPosition-7 + 'px';
+  dot.innerHTML = index + 1;
 
   container.appendChild(dot);
 }
 
 // Function to update chop dot positions
 function updateChopDotPositions() {
+  console.log("UPDATING CHOP POSITIONS");
   let videoId = getYouTubeVideoId();
+  console.log("VIDEO ID: " + videoId);
   chrome.storage.local.get({ [videoId]: [] }, function(result) {
     let timestamps = result[videoId];
     let player = document.querySelector('video');
@@ -57,8 +59,8 @@ function updateChopDotPositions() {
 
     container.innerHTML = ''; // Clear existing dots before re-rendering
 
-    timestamps.forEach(function(timestamp) {
-      addChopDot(timestamp);
+    timestamps.forEach(function(timestamp, index) {
+      addChopDot(timestamp, index);
     });
   });
 }
@@ -79,7 +81,7 @@ document.addEventListener('keydown', function(event) {
 
     chrome.storage.local.get({ [videoId]: [] }, function(result) {
       let timestamps = result[videoId];
-      console.log('Storage i guess: ', result[videoId]);
+      console.log('Storage: ', result[videoId]);
       timestamps.push(currentTime);
 
       // Sort timestamps immediately after adding
@@ -88,29 +90,12 @@ document.addEventListener('keydown', function(event) {
       let dataToStore = {};
       dataToStore[videoId] = timestamps;
 
-      // Add a new chop dot
-      addChopDot(currentTime);
-
       chrome.storage.local.set(dataToStore, function() {
         console.log('Timestamp captured:', currentTime, 'for video ID:', videoId);
+        updateChopDotPositions();
       });
     });
-  } else {
-    chrome.storage.local.get({ keys: {} }, function(result) {
-      let keys = result.keys;
-      if (keys[event.key] !== undefined) {
-        let timestampIndex = keys[event.key];
-        let videoId = getYouTubeVideoId();
-
-        chrome.storage.local.get({ [videoId]: [] }, function(result) {
-          let timestamps = result[videoId];
-          if (timestamps[timestampIndex] !== undefined) {
-            player.currentTime = timestamps[timestampIndex];
-          }
-        });
-      }
-    });
-  }
+  } 
 });
 
 // Listen for messages from the extension popup or other parts of the extension
@@ -153,5 +138,36 @@ document.addEventListener('fullscreenchange', function() {
 
 // Listen for Theater mode button click
 document.querySelector('.ytp-size-button').addEventListener('click', function() {
+  console.log("THEATER BUTTON PRESSED");
   updateChopDotPositions();
+});
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const { message } = request;
+  console.log('chrome.runtime onMessage', message);
+  if (message === 'URL updated') {
+    updateChopDotPositions();
+  }
+});
+
+
+
+document.addEventListener('readystatechange', function() {
+  if (document.readyState === 'complete') {
+    document.addEventListener('keydown', (event) => {
+      if (event.key >= '0' && event.key <= '9') {
+        event.preventDefault();
+        const player = document.querySelector('video');
+        let videoId = getYouTubeVideoId();
+        const numberKey = parseInt(event.key, 10);
+        const timestampIndex = numberKey - 1;
+
+        chrome.storage.local.get({ [videoId]: [] }, function(result) {
+          let timestamps = result[videoId];
+          if (timestamps[timestampIndex] !== undefined) {
+            player.currentTime = timestamps[timestampIndex];
+          }
+        });
+      }
+    }, true);
+  }
 });

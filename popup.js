@@ -1,5 +1,4 @@
 // popup.js
-
 document.addEventListener('DOMContentLoaded', function() {
   const settingsButton = document.querySelector('.settings-button');
   const mainContent = document.querySelector('.main-content');
@@ -29,8 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let span = document.createElement('span');
         span.textContent = "Chop @ " + formattedTimestamp;
 
-        // Assign key to timestamp
-        assignKey(index);
         span.textContent += " | Key: " + (index + 1);
 
         li.appendChild(span);
@@ -94,15 +91,4 @@ document.addEventListener('DOMContentLoaded', function() {
     return formattedTimestamp; 
   }
 
-  // Function to assign a key to a timestamp
-  function assignKey(index) {
-    chrome.storage.local.get({ keys: {} }, function(result) {
-      let keys = result.keys;
-      let key = index + 1;
-      keys[key] = index;
-      chrome.storage.local.set({ keys: keys }, function() {
-        console.log('Key ${key} assigned to timestamp ${index}');
-      });
-    });
-  }
 });

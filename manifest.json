@@ -5,7 +5,8 @@
   "description": "A tool for music producers to sample songs and make chops directly in YouTube.",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "background": {
     "service_worker": "background.js"

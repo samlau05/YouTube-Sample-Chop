@@ -8,10 +8,11 @@
   }
   .chop-dot {
     position: absolute;
-    top: -15px; 
-    width: 12px;
-    height: 12px;
+    top: -20px; 
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background-color: red;
     pointer-events: auto;
+    text-align: center;
   }
