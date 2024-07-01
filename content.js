@@ -8,23 +8,42 @@ function getYouTubeVideoId() {
   return videoId;
 }
 
-// Function to add a dot at a specific timestamp position above the YouTube progress bar
-function addChopDot(currentTime) {
-  // Find the YouTube progress bar 
-  const player = document.querySelector('video');
-  const progressBar = document.querySelector('.ytp-progress-bar-container');
-  if (!player || !progressBar) return;
+// Function to create or get the chop dot container
+function getChopDotContainer() {
+  let container = document.querySelector('.chop-dot-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.classList.add('chop-dot-container');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.pointerEvents = 'none'; // Ensure it doesn't interfere with clicks
 
-  let progressBarRect = progressBar.getBoundingClientRect();
-  let progressBarWidth = progressBarRect.width;
-  let dotPosition = (currentTime / player.duration) * progressBarWidth;
+    const progressBar = document.querySelector('.ytp-progress-bar-container');
+    if (progressBar) {
+      progressBar.appendChild(container);
+    }
+  }
+  return container;
+}
+
+// Function to add a dot at a specific timestamp position
+function addChopDot(currentTime) {
+  const player = document.querySelector('video');
+  const container = getChopDotContainer();
+  if (!player || !container) return;
+
+  // This only works when the video does not have any chapters... future fix
+  let dotPosition = (currentTime / player.duration) * container.offsetWidth;
 
   let dot = document.createElement('div');
   dot.classList.add('chop-dot'); // Add a class for styling
-  dot.style.left = dotPosition + 'px';
+  dot.style.left = dotPosition-6 + 'px';
   dot.setAttribute('data-time', currentTime); // Set a data attribute to identify the dot
 
-  progressBar.appendChild(dot);
+  container.appendChild(dot);
 }
 
 // Function to update chop dot positions
@@ -33,24 +52,13 @@ function updateChopDotPositions() {
   chrome.storage.local.get({ [videoId]: [] }, function(result) {
     let timestamps = result[videoId];
     let player = document.querySelector('video');
-    let progressBar = document.querySelector('.ytp-progress-bar-container');
-    if (!player || !progressBar) return;
+    let container = getChopDotContainer();
+    if (!player || !container) return;
 
-    let progressBarRect = progressBar.getBoundingClientRect();
-    let progressBarWidth = progressBarRect.width;
-
-    // Clear existing dots before re-rendering
-    document.querySelectorAll('.chop-dot').forEach(dot => dot.remove());
+    container.innerHTML = ''; // Clear existing dots before re-rendering
 
     timestamps.forEach(function(timestamp) {
-      let dotPosition = (timestamp / player.duration) * progressBarWidth;
-
-      let dot = document.createElement('div');
-      dot.classList.add('chop-dot'); // Add a class for styling
-      dot.style.left = dotPosition-6 + 'px';
-      dot.setAttribute('data-time', timestamp); // Set a data attribute to identify the dot
-
-      progressBar.appendChild(dot);
+      addChopDot(timestamp);
     });
   });
 }
@@ -115,8 +123,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       chrome.storage.local.set(dataToStore, function() {
         // Optionally send a response if needed
         sendResponse({ message: 'Timestamp deleted successfully' });
-        
-        // could definitely be improved here for future... maybe set an id for each chop dot that includes the timestamp, then delete that specific
         updateChopDotPositions();
       });
     });
@@ -133,5 +139,15 @@ window.addEventListener('load', function() {
 
 // Update chop dot positions when the window is resized
 window.addEventListener('resize', function() {
+  updateChopDotPositions();
+});
+
+// Update chop dot positions when the player mode is changed
+document.addEventListener('fullscreenchange', function() {
+  updateChopDotPositions();
+});
+
+// Listen for Theater mode button click
+document.querySelector('.ytp-size-button').addEventListener('click', function() {
   updateChopDotPositions();
 });
