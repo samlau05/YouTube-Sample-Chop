@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create span for timestamp text
         let span = document.createElement('span');
         span.textContent = "Chop @ " + formattedTimestamp;
+
+        // Assign key to timestamp
+        assignKey(index);
+        span.textContent += " | Key: " + (index + 1);
+
         li.appendChild(span);
 
         // Create a delete button
@@ -38,16 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
           deleteTimestamp(videoId, index); // Call delete function with videoId and index
         });
 
-        let keyBtn = document.createElement('button');
-        keyBtn.textContent = 'Assign Key';
-        keyBtn.addEventListener('click', function() {
-          let key = prompt("Enter a key to assign:");
-          if (key) {
-            assignKey(index, key);
-          }
-        });
-
-        li.appendChild(keyBtn);
         li.appendChild(deleteBtn);
         timestampsList.appendChild(li);
       });
@@ -58,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         li.textContent = "Add some chops using the 's' key to get started";
         timestampsList.appendChild(li);
       }
-      
+
     });
   });
 
@@ -100,12 +95,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Function to assign a key to a timestamp
-  function assignKey(index, key) {
+  function assignKey(index) {
     chrome.storage.local.get({ keys: {} }, function(result) {
       let keys = result.keys;
+      let key = index + 1;
       keys[key] = index;
       chrome.storage.local.set({ keys: keys }, function() {
-        console.log(`Key ${key} assigned to timestamp ${index}`);
+        console.log('Key ${key} assigned to timestamp ${index}');
       });
     });
   }
