@@ -101,6 +101,31 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
+// Listen for messages from the extension popup or other parts of the extension
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === 'deleteTimestamp') {
+    let { videoId, index } = request.payload;
+
+    chrome.storage.local.get({ [videoId]: [] }, function(result) {
+      let timestamps = result[videoId];
+      timestamps.splice(index, 1); // Remove the timestamp at the specified index
+      let dataToStore = {};
+      dataToStore[videoId] = timestamps;
+
+      chrome.storage.local.set(dataToStore, function() {
+        // Optionally send a response if needed
+        sendResponse({ message: 'Timestamp deleted successfully' });
+        
+        // could definitely be improved here for future... maybe set an id for each chop dot that includes the timestamp, then delete that specific
+        updateChopDotPositions();
+      });
+    });
+
+    // Return true to indicate that the response will be sent asynchronously
+    return true;
+  }
+});
+
 // Ensure the page is fully loaded before applying dots
 window.addEventListener('load', function() {
   updateChopDotPositions();

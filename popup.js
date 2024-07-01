@@ -1,12 +1,13 @@
-document.addEventListener('DOMContentLoaded', function() {
+// popup.js
 
+document.addEventListener('DOMContentLoaded', function() {
   const settingsButton = document.querySelector('.settings-button');
   const mainContent = document.querySelector('.main-content');
   const settingsContent = document.querySelector('.settings-content');
 
   settingsButton.addEventListener('click', function() {
-      mainContent.classList.toggle('hidden');
-      settingsContent.classList.toggle('hidden');
+    mainContent.classList.toggle('hidden');
+    settingsContent.classList.toggle('hidden');
   });
 
   let timestampsList = document.getElementById('timestamps');
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.className = 'delete-btn';
         deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
         deleteBtn.addEventListener('click', function() {
-          deleteTimestamp(videoId, index);
+          deleteTimestamp(videoId, index); // Call delete function with videoId and index
         });
 
         let keyBtn = document.createElement('button');
@@ -53,16 +54,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Function for deleting a timestamp
+  // Function for deleting a timestamp (now sends message to content script)
   function deleteTimestamp(videoId, index) {
-    chrome.storage.local.get({ [videoId]: [] }, function(result) {
-      let timestamps = result[videoId];
-      timestamps.splice(index, 1); // Remove the timestamp at the specified index
-      let dataToStore = {};
-      dataToStore[videoId] = timestamps;
-
-      chrome.storage.local.set(dataToStore, function() {
-        // After deletion, refresh the popup to reflect changes
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      let activeTab = tabs[0];
+      chrome.tabs.sendMessage(activeTab.id, {
+        action: 'deleteTimestamp',
+        payload: { videoId, index }
+      }, function(response) {
+        // Handle response if needed
+        console.log(response.message);
+        // Optionally, refresh the popup after deletion
         location.reload();
       });
     });
@@ -81,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return videoId;
   }
 
-  // Function to convert the seconds into a minutes seconds format
+  // Function to convert seconds into a minutes:seconds format
   function convertTime(timestamp) {
     var mins = Math.floor(timestamp / 60);
     var seconds = Math.round(timestamp % 60);
@@ -89,17 +91,14 @@ document.addEventListener('DOMContentLoaded', function() {
     return formattedTimestamp; 
   }
 
+  // Function to assign a key to a timestamp
   function assignKey(index, key) {
-    chrome.storage.local.get({keys: {}}, function(result) {
+    chrome.storage.local.get({ keys: {} }, function(result) {
       let keys = result.keys;
       keys[key] = index;
-      chrome.storage.local.set({keys: keys}, function() {
+      chrome.storage.local.set({ keys: keys }, function() {
         console.log(`Key ${key} assigned to timestamp ${index}`);
       });
     });
   }
-
 });
-  
-
-  
