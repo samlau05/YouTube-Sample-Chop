@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
       timestamps.forEach(function(timestamp, index) {
         let li = document.createElement('li');
 
+        formattedTimestamp = convertTime(timestamp);
+
         // Create span for timestamp text
         let span = document.createElement('span');
-        span.textContent = "Chop: " + timestamp;
+        span.textContent = "Chop @ " + formattedTimestamp;
         li.appendChild(span);
 
         // Create a delete button
@@ -68,6 +70,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     return videoId;
   }
+
+  // Function to convert the seconds into a minutes seconds format
+  function convertTime(timestamp) {
+    var mins = Math.floor(timestamp / 60);
+    var seconds = Math.round(timestamp % 60);
+    var formattedTimestamp = mins + ":" + (seconds < 10 ? "0" : "") + seconds;
+    return formattedTimestamp; 
+}
 });
   
 
