@@ -8,7 +8,27 @@ function getYouTubeVideoId() {
   return videoId;
 }
 
-function loadChopDots() {
+// Function to add a dot at a specific timestamp position above the YouTube progress bar
+function addChopDot(currentTime) {
+  // Find the YouTube progress bar 
+  const player = document.querySelector('video');
+  const progressBar = document.querySelector('.ytp-progress-bar-container');
+  if (!player || !progressBar) return;
+
+  let progressBarRect = progressBar.getBoundingClientRect();
+  let progressBarWidth = progressBarRect.width;
+  let dotPosition = (currentTime / player.duration) * progressBarWidth;
+
+  let dot = document.createElement('div');
+  dot.classList.add('chop-dot'); // Add a class for styling
+  dot.style.left = dotPosition + 'px';
+  dot.setAttribute('data-time', currentTime); // Set a data attribute to identify the dot
+
+  progressBar.appendChild(dot);
+}
+
+// Function to update chop dot positions
+function updateChopDotPositions() {
   let videoId = getYouTubeVideoId();
   chrome.storage.local.get({ [videoId]: [] }, function(result) {
     let timestamps = result[videoId];
@@ -19,6 +39,7 @@ function loadChopDots() {
     let progressBarRect = progressBar.getBoundingClientRect();
     let progressBarWidth = progressBarRect.width;
 
+    // Clear existing dots before re-rendering
     document.querySelectorAll('.chop-dot').forEach(dot => dot.remove());
 
     timestamps.forEach(function(timestamp) {
@@ -34,35 +55,6 @@ function loadChopDots() {
   });
 }
 
-
-// Function to add a dot at a specific timestamp position above the YouTube progress bar
-function addChopDot(currentTime) {
-  // Find the YouTube progress bar
-  const player = document.querySelector('video');
-  const progressBar = document.querySelector('.ytp-progress-bar-container');
-  if (!player || !progressBar) return;
-
-  let progressBarRect = progressBar.getBoundingClientRect();
-  let progressBarWidth = progressBarRect.width;
-  let dotPosition = (currentTime / player.duration) * progressBarWidth;
-
-  // Check if a dot already exists at this position
-  let existingDot = progressBar.querySelector(`.chop-dot[data-time="${currentTime}"]`);
-  if (existingDot) return;
-
-  let dot = document.createElement('div');
-  dot.classList.add('chop-dot'); // Add a class for styling
-  dot.style.left = dotPosition-6 + 'px';
-  dot.setAttribute('data-time', currentTime); // Set a data attribute to identify the dot
-
-  let progressBarContainer = document.querySelector('.ytp-progress-bar-container');
-  if (progressBarContainer) {
-    progressBarContainer.appendChild(dot);
-  } else {
-    console.error('Progress bar container not found.');
-  }
-}
-
 document.addEventListener('keydown', function(event) {
   console.log('Key pressed:', event.key); // Log key press for debugging
 
@@ -72,7 +64,7 @@ document.addEventListener('keydown', function(event) {
     return;
   }
 
-  // CODE FOR CAPTURING TIMESTAMPS
+  // Code for capturing timestamps
   if (event.key === 's') { 
     let currentTime = player.currentTime;
     let videoId = getYouTubeVideoId();
@@ -84,7 +76,7 @@ document.addEventListener('keydown', function(event) {
       let dataToStore = {};
       dataToStore[videoId] = timestamps;
 
-      // add a new chop dot
+      // Add a new chop dot
       addChopDot(currentTime);
 
       chrome.storage.local.set(dataToStore, function() {
@@ -109,18 +101,12 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
-window.addEventListener('load', () => {
-  loadChopDots();
+// Ensure the page is fully loaded before applying dots
+window.addEventListener('load', function() {
+  updateChopDotPositions();
+});
 
-  window.addEventListener('resize', loadChopDots);
-
-  // Add mutation observer to detect changes in YouTube player size
-  const playerContainer = document.querySelector('.html5-video-player');
-  if (playerContainer) {
-    const observer = new MutationObserver(() => {
-      loadChopDots();
-    });
-    observer.observe(playerContainer, { attributes: true, childList: true, subtree: true });
-  }
-
-})
+// Update chop dot positions when the window is resized
+window.addEventListener('resize', function() {
+  updateChopDotPositions();
+});

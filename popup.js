@@ -37,6 +37,16 @@ document.addEventListener('DOMContentLoaded', function() {
           deleteTimestamp(videoId, index);
         });
 
+        let keyBtn = document.createElement('button');
+        keyBtn.textContent = 'Assign Key';
+        keyBtn.addEventListener('click', function() {
+          let key = prompt("Enter a key to assign:");
+          if (key) {
+            assignKey(index, key);
+          }
+        });
+
+        li.appendChild(keyBtn);
         li.appendChild(deleteBtn);
         timestampsList.appendChild(li);
       });
@@ -77,7 +87,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var seconds = Math.round(timestamp % 60);
     var formattedTimestamp = mins + ":" + (seconds < 10 ? "0" : "") + seconds;
     return formattedTimestamp; 
-}
+  }
+
+  function assignKey(index, key) {
+    chrome.storage.local.get({keys: {}}, function(result) {
+      let keys = result.keys;
+      keys[key] = index;
+      chrome.storage.local.set({keys: keys}, function() {
+        console.log(`Key ${key} assigned to timestamp ${index}`);
+      });
+    });
+  }
+
 });
   
 
