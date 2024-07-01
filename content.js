@@ -63,6 +63,13 @@ function updateChopDotPositions() {
   });
 }
 
+// function assignKeys() {
+//   let videoId = getYouTubeVideoId();
+//   chrome.storage.local.get({ [videoId]: [] }, function(result) {
+
+//   });
+// }
+
 document.addEventListener('keydown', function(event) {
   console.log('Key pressed:', event.key); // Log key press for debugging
 
@@ -81,6 +88,10 @@ document.addEventListener('keydown', function(event) {
       let timestamps = result[videoId];
       console.log('Storage i guess: ', result[videoId]);
       timestamps.push(currentTime);
+      
+      // Sort timestamps immediately after adding
+      timestamps.sort((a, b) => a - b);
+
       let dataToStore = {};
       dataToStore[videoId] = timestamps;
 
