@@ -51,6 +51,10 @@ document.addEventListener('DOMContentLoaded', function() {
         li.appendChild(deleteBtn);
         timestampsList.appendChild(li);
       });
+      if(timestamps.length == 0) {
+        timestampsList.innerHTML = "<h3>Add some chops using the 's' key to get started<h3>";
+        timestampsList.style.color = "white";
+      }
     });
   });
 
