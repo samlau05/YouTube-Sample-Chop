@@ -51,6 +51,7 @@ function updateChopDotPositions() {
   console.log("UPDATING CHOP POSITIONS");
   let videoId = getYouTubeVideoId();
   console.log("VIDEO ID: " + videoId);
+  if( videoId === null ) { return; }
   chrome.storage.local.get({ [videoId]: [] }, function(result) {
     let timestamps = result[videoId];
     let player = document.querySelector('video');
@@ -78,6 +79,8 @@ document.addEventListener('keydown', function(event) {
   if (event.key === 's') { 
     let currentTime = player.currentTime;
     let videoId = getYouTubeVideoId();
+
+    if(videoId === null ) { return; }
 
     chrome.storage.local.get({ [videoId]: [] }, function(result) {
       let timestamps = result[videoId];
@@ -143,12 +146,11 @@ document.querySelector('.ytp-size-button').addEventListener('click', function() 
 });
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { message } = request;
-  console.log('chrome.runtime onMessage', message);
   if (message === 'URL updated') {
     updateChopDotPositions();
   }
+  console.log('chrome.runtime onMessage', message);
 });
-
 
 
 document.addEventListener('readystatechange', function() {
