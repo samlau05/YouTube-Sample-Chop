@@ -29,41 +29,64 @@ function getChopDotContainer() {
   return container;
 }
 
-// Function to add a dot at a specific timestamp position
-function addChopDot(currentTime, index) {
+function calculateChopDopPosition(currentTime) {
   const player = document.querySelector('video');
   const container = getChopDotContainer();
   if (!player || !container) return;
+  return (currentTime / player.duration) * container.offsetWidth;
+}
 
-  // This only works when the video does not have any chapters... future fix
-  let dotPosition = (currentTime / player.duration) * container.offsetWidth;
-
+// Function to add a dot at a specific timestamp position
+function addChopDot(dotPosition, index) {
+  const player = document.querySelector('video');
+  const container = getChopDotContainer();
+  if (!player || !container) return;
   let dot = document.createElement('div');
-  dot.classList.add('chop-dot'); // Add a class for styling
+
+  // styling + positioning
+  dot.classList.add('chop-dot'); 
   dot.style.left = dotPosition-7 + 'px';
+  dot.id = dotPosition;
   dot.innerHTML = index + 1;
 
+  // append to the chopDot container
   container.appendChild(dot);
 }
 
-// Function to update chop dot positions
-function updateChopDotPositions() {
-  console.log("UPDATING CHOP POSITIONS");
+/*
+deleteChopDot
+*/
+function deleteChopDot(chopDotPosition) {
+  let dotToDelete = document.querySelector('#${chopDotPosition}');
+  if (dotToDelete) {
+    dotToDelete.remove();
+    
+  }
+
+
+}
+
+function loadChopDots() {
   let videoId = getYouTubeVideoId();
-  console.log("VIDEO ID: " + videoId);
-  if( videoId === null ) { return; }
-  chrome.storage.local.get({ [videoId]: [] }, function(result) {
-    let timestamps = result[videoId];
-    let player = document.querySelector('video');
+  if(!videoId) return;
+  chrome.storage.local.get({ [videoId]: { timestamps: [], chopDotPositions: [] }}, function(result) {
+    let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};
+
+    if(!chopDotPositions) return;
+
+    // first create the ChopDot container div and make sure it's clear
     let container = getChopDotContainer();
-    if (!player || !container) return;
+    container.innerHTML = "";
 
-    container.innerHTML = ''; // Clear existing dots before re-rendering
-
-    timestamps.forEach(function(timestamp, index) {
-      addChopDot(timestamp, index);
+    // now add each dot to this div
+    chopDotPositions.forEach(function(chopDotPosition, index) {
+      addChopDot(chopDotPosition, index);
     });
   });
+}
+
+function init() {
+  loadChopDots();
 }
 
 document.addEventListener('keydown', function(event) {
@@ -82,20 +105,26 @@ document.addEventListener('keydown', function(event) {
 
     if(videoId === null ) { return; }
 
-    chrome.storage.local.get({ [videoId]: [] }, function(result) {
-      let timestamps = result[videoId];
+    chrome.storage.local.get({ [videoId]: { timestamps: [], chopDotPositions: [] }}, function(result) {
+      let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};
+
       console.log('Storage: ', result[videoId]);
       timestamps.push(currentTime);
 
       // Sort timestamps immediately after adding
       timestamps.sort((a, b) => a - b);
 
+      // set chopdot info
+      let newDotPosition = calculateChopDopPosition(currentTime)
+      chopDotPositions.push(newDotPosition);
+      let index = (chopDotPositions.length) - 1;
+      addChopDot(newDotPosition, index);
+
       let dataToStore = {};
-      dataToStore[videoId] = timestamps;
+      dataToStore[videoId] = { timestamps: timestamps, chopDotPositions: chopDotPositions };
 
       chrome.storage.local.set(dataToStore, function() {
         console.log('Timestamp captured:', currentTime, 'for video ID:', videoId);
-        updateChopDotPositions();
       });
     });
   } 
@@ -106,16 +135,23 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === 'deleteTimestamp') {
     let { videoId, index } = request.payload;
 
-    chrome.storage.local.get({ [videoId]: [] }, function(result) {
-      let timestamps = result[videoId];
-      timestamps.splice(index, 1); // Remove the timestamp at the specified index
+    chrome.storage.local.get({ [videoId]: { timestamps: [], chopDotPositions: [] }}, function(result) {
+      let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};
+
+      let positionToDelete = chopDotPositions[index];
+
+      // remove the info stored at that position
+      timestamps.splice(index, 1); 
+      chopDotPositions.splice(index, 1);
+
+      deleteChopDot(positionToDelete);
+      
       let dataToStore = {};
-      dataToStore[videoId] = timestamps;
+      dataToStore[videoId] = { timestamps: timestamps, chopDotPositions: chopDotPositions };
 
       chrome.storage.local.set(dataToStore, function() {
         // Optionally send a response if needed
         sendResponse({ message: 'Timestamp deleted successfully' });
-        updateChopDotPositions();
       });
     });
 
@@ -126,28 +162,29 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 // Ensure the page is fully loaded before applying dots
 window.addEventListener('load', function() {
-  updateChopDotPositions();
+  init();
 });
 
-// Update chop dot positions when the window is resized
-window.addEventListener('resize', function() {
-  updateChopDotPositions();
-});
+// // Update chop dot positions when the window is resized
+// window.addEventListener('resize', function() {
+//   updateChopDotPositions();
+// });
 
-// Update chop dot positions when the player mode is changed
-document.addEventListener('fullscreenchange', function() {
-  updateChopDotPositions();
-});
+// // Update chop dot positions when the player mode is changed
+// document.addEventListener('fullscreenchange', function() {
+//   updateChopDotPositions();
+// });
 
-// Listen for Theater mode button click
-document.querySelector('.ytp-size-button').addEventListener('click', function() {
-  console.log("THEATER BUTTON PRESSED");
-  updateChopDotPositions();
-});
+// // Listen for Theater mode button click
+// document.querySelector('.ytp-size-button').addEventListener('click', function() {
+//   console.log("THEATER BUTTON PRESSED");
+//   updateChopDotPositions();
+// });
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { message } = request;
   if (message === 'URL updated') {
-    updateChopDotPositions();
+    init();
   }
   console.log('chrome.runtime onMessage', message);
 });
@@ -163,8 +200,8 @@ document.addEventListener('readystatechange', function() {
         const numberKey = parseInt(event.key, 10);
         const timestampIndex = numberKey - 1;
 
-        chrome.storage.local.get({ [videoId]: [] }, function(result) {
-          let timestamps = result[videoId];
+        chrome.storage.local.get({ [videoId]: { timestamps: [], chopDotPositions: [] }}, function(result) {
+          let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};
           if (timestamps[timestampIndex] !== undefined) {
             player.currentTime = timestamps[timestampIndex];
           }

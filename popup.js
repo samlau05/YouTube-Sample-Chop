@@ -17,8 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let videoId = extractVideoId(url); // Extract video ID from URL
 
     // Retrieve timestamps from local storage based on videoId
-    chrome.storage.local.get({ [videoId]: [] }, function(result) {
-      let timestamps = result[videoId];
+    chrome.storage.local.get({ [videoId]: { timestamps: [], chopDotPositions: [] }}, function(result) {
+      let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};
+
       timestamps.forEach(function(timestamp, index) {
         let li = document.createElement('li');
 
