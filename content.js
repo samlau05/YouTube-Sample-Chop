@@ -56,14 +56,19 @@ function addChopDot(dotPosition, index) {
 /*
 deleteChopDot
 */
-function deleteChopDot(chopDotPosition) {
-  let dotToDelete = document.querySelector('#${chopDotPosition}');
+function deleteChopDot(chopDotPosition, index, chopDotPositions) {
+  console.log(chopDotPosition);
+  let escapedChopDotPosition = CSS.escape(chopDotPosition);
+  let dotToDelete = document.querySelector(`#${escapedChopDotPosition}`);
   if (dotToDelete) {
     dotToDelete.remove();
-    
+    for(let i = index; i < chopDotPositions.length; i++) {
+      let escapedCurrPosition = CSS.escape(chopDotPositions[i]);
+      let currDot = document.querySelector(`#${escapedCurrPosition}`);
+      console.log(currDot);
+      currDot.innerHTML = index + 1;
+    }
   }
-
-
 }
 
 function loadChopDots() {
@@ -144,7 +149,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       timestamps.splice(index, 1); 
       chopDotPositions.splice(index, 1);
 
-      deleteChopDot(positionToDelete);
+      deleteChopDot(positionToDelete, index, chopDotPositions);
       
       let dataToStore = {};
       dataToStore[videoId] = { timestamps: timestamps, chopDotPositions: chopDotPositions };
