@@ -38,6 +38,7 @@ function calculateChopDopPosition(currentTime) {
 
 // Function to add a dot at a specific timestamp position
 function addChopDot(dotPosition, index) {
+  console.log("Index in add: " + index);
   const player = document.querySelector('video');
   const container = getChopDotContainer();
   if (!player || !container) return;
@@ -53,6 +54,18 @@ function addChopDot(dotPosition, index) {
   container.appendChild(dot);
 }
 
+function updateChopDotNumbers(chopDotPositions, index) {
+  console.log("Index in update: " + index);
+  console.log("Length: " + chopDotPositions.length);
+  for(let i = index; i < chopDotPositions.length; i++) {
+    console.log("ChopDotPos: " + chopDotPositions[i]);
+    let escapedCurrPosition = CSS.escape(chopDotPositions[i]);
+    let currDot = document.querySelector(`#${escapedCurrPosition}`);
+    console.log("CURR DOT" + i);
+    currDot.innerHTML = i + 1;
+  }
+}
+
 /*
 deleteChopDot
 */
@@ -62,12 +75,7 @@ function deleteChopDot(chopDotPosition, index, chopDotPositions) {
   let dotToDelete = document.querySelector(`#${escapedChopDotPosition}`);
   if (dotToDelete) {
     dotToDelete.remove();
-    for(let i = index; i < chopDotPositions.length; i++) {
-      let escapedCurrPosition = CSS.escape(chopDotPositions[i]);
-      let currDot = document.querySelector(`#${escapedCurrPosition}`);
-      console.log(currDot);
-      currDot.innerHTML = index + 1;
-    }
+    updateChopDotNumbers(chopDotPositions, index);
   }
 }
 
@@ -88,6 +96,26 @@ function loadChopDots() {
       addChopDot(chopDotPosition, index);
     });
   });
+}
+
+function insertSorted(array, element) {
+  // Binary search to find the correct insertion index
+  let left = 0;
+  let right = array.length;
+
+  while (left < right) {
+    let mid = Math.floor((left + right) / 2);
+    if (array[mid] < element) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+
+  // Insert the element at the correct index
+  array.splice(left, 0, element);
+
+  return left;
 }
 
 function init() {
@@ -114,16 +142,15 @@ document.addEventListener('keydown', function(event) {
       let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};
 
       console.log('Storage: ', result[videoId]);
-      timestamps.push(currentTime);
-
-      // Sort timestamps immediately after adding
-      timestamps.sort((a, b) => a - b);
+      let index = insertSorted(timestamps, currentTime);
+      console.log("Index: " + index);
 
       // set chopdot info
       let newDotPosition = calculateChopDopPosition(currentTime)
-      chopDotPositions.push(newDotPosition);
-      let index = (chopDotPositions.length) - 1;
+      insertSorted(chopDotPositions, newDotPosition);
       addChopDot(newDotPosition, index);
+      updateChopDotNumbers(chopDotPositions, index);
+
 
       let dataToStore = {};
       dataToStore[videoId] = { timestamps: timestamps, chopDotPositions: chopDotPositions };

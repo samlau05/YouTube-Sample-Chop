@@ -93,3 +93,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 });
+
+document.getElementById('clearStorageButton').addEventListener('click', function() {
+  chrome.storage.local.clear(function() {
+    if (chrome.runtime.lastError) {
+      console.error('Error clearing storage:', chrome.runtime.lastError);
+    } else {
+      console.log('Local storage cleared.');
+      alert('Local storage has been cleared.');
+    }
+  });
+});
