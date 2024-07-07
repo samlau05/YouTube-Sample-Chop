@@ -122,6 +122,23 @@ function init() {
   loadChopDots();
 }
 
+function updateChopDotPositions() {
+  let videoId = getYouTubeVideoId();
+  if(!videoId) return;
+  chrome.storage.local.get({ [videoId]: { timestamps: [], chopDotPositions: [] }}, function(result) {
+  let { timestamps = [], chopDotPositions = [] } = result[videoId] || {};  
+  chopDotPositions = [];
+  let container = getChopDotContainer();
+
+  container.innerHTML = "";
+
+  timestamps.forEach(function(timestamp, index) {
+    let chopDotPosition = calculateChopDopPosition(timestamp);
+    addChopDot(chopDotPosition, index);
+  });
+  });
+}
+
 document.addEventListener('keydown', function(event) {
   console.log('Key pressed:', event.key); // Log key press for debugging
 
@@ -197,21 +214,21 @@ window.addEventListener('load', function() {
   init();
 });
 
-// // Update chop dot positions when the window is resized
-// window.addEventListener('resize', function() {
-//   updateChopDotPositions();
-// });
+// Update chop dot positions when the window is resized
+window.addEventListener('resize', function() {
+  updateChopDotPositions();
+});
 
-// // Update chop dot positions when the player mode is changed
-// document.addEventListener('fullscreenchange', function() {
-//   updateChopDotPositions();
-// });
+// Update chop dot positions when the player mode is changed
+document.addEventListener('fullscreenchange', function() {
+  updateChopDotPositions();
+});
 
-// // Listen for Theater mode button click
-// document.querySelector('.ytp-size-button').addEventListener('click', function() {
-//   console.log("THEATER BUTTON PRESSED");
-//   updateChopDotPositions();
-// });
+// Listen for Theater mode button click
+document.querySelector('.ytp-size-button').addEventListener('click', function() {
+  console.log("THEATER BUTTON PRESSED");
+  updateChopDotPositions();
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { message } = request;
